@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tabela Periódica - Missão Subnível</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(to right, #eef2f3, #8e9eab);
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .mission {
+            margin: 20px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .progress {
+            margin: 10px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .status {
+            margin-top: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            min-height: 22px; /* Reserve space for status messages */
+        }
+        .controls {
+            margin-top: 15px;
+            margin-bottom: 20px;
+        }
+        .controls button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #ff6666;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            margin: 5px;
+            transition: background-color 0.3s;
+        }
+        .controls button:hover {
+            background-color: #cc0000;
+        }
+
+        .table-environment { /* Container for table and side labels */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align items to the start of the cross axis */
+            margin: 20px auto;
+        }
+
+        .period-column {
+            display: flex;
+            flex-direction: column;
+            margin-right: 8px; /* Space between period numbers and table */
+            padding-top: 0; /* Align with first row of elements */
+        }
+
+        .period-label {
+            width: 30px; 
+            height: 50px; /* Match element height */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 4px; /* Match grid-gap */
+            box-sizing: border-box;
+        }
+        .period-label.placeholder { /* For spacing if needed */
+            visibility: hidden;
+        }
+
+
+        .periodic-table-wrapper {
+            display: flex;
+            flex-direction: column; /* Stack table and any top/bottom labels for it */
+            align-items: center; /* Center the table within its column */
+        }
+
+        .periodic-table {
+            display: grid;
+            grid-template-columns: repeat(18, 50px);
+            grid-gap: 4px;
+            /* justify-content: center; remove this if wrapper handles centering */
+            /* margin: 20px auto; remove this if wrapper handles margin */
+            position: relative;
+            background-color: white;
+            padding: 10px; /* Reduced padding slightly */
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .element {
+            border: 2px solid #aaa;
+            padding: 8px;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 30px; 
+            box-sizing: border-box;
+            width: 50px;
+            height: 50px;
+        }
+        .element:hover {
+            transform: scale(1.05);
+        }
+        .element.selected {
+            background-color: #00c3ff !important;
+            border-color: #0077aa;
+            color: white;
+        }
+        .element.target-element-highlight {
+            box-shadow: 0 0 12px 4px gold;
+            border: 2px solid orange;
+        }
+
+        .block-s { background-color: #f8c291; }
+        .block-p { background-color: #82ccdd; }
+        .block-d { background-color: #b8e994; }
+        .block-f { background-color: #f6e58d; }
+        
+        .blank {
+            visibility: hidden;
+            width: 50px; /* Ensure blank cells take up space */
+            height: 50px;
+        }
+        
+        .f-block-overall-container { /* Container for f-block and its period labels */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            margin-top: 15px; /* Space above f-block */
+        }
+
+        .f-block-container {
+            display: grid;
+            grid-template-columns: repeat(14, 50px); /* 14 columns for f-block elements */
+            grid-gap: 4px;
+            /* justify-content: center; */
+            /* margin: 20px auto; */
+            background-color: white;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .f-block-placeholder {
+            border: 2px solid #aaa;
+            padding: 8px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #555;
+            cursor: default;
+            min-height: 30px;
+            width: 50px;
+            height: 50px;
+            box-sizing: border-box;
+        }
+
+        .block-labels-container {
+            margin-top: 25px;
+            width: 100%;
+        }
+        .block-labels {
+            display: flex;
+            justify-content: center;
+            gap: 20px; 
+            flex-wrap: wrap; 
+        }
+        .block-labels span {
+            width: auto; 
+            padding: 5px 10px; 
+            display: inline-block;
+            font-weight: bold;
+            border-radius: 6px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1050px) { /* Adjusted breakpoint */
+            .periodic-table, .f-block-container {
+                padding: 5px;
+            }
+            .element, .f-block-placeholder, .period-label {
+                width: 40px;
+                height: 40px;
+                font-size: 10px;
+                padding: 4px;
+            }
+            .periodic-table { grid-template-columns: repeat(18, 40px); }
+            .f-block-container { grid-template-columns: repeat(14, 40px); }
+            .period-label { font-size: 12px; }
+            .mission { font-size: 20px; }
+            .progress, .status { font-size: 16px; }
+        }
+
+        @media (max-width: 820px) {
+             .table-environment, .f-block-overall-container {
+                width: 100%; /* Allow side scrolling if necessary */
+                overflow-x: auto;
+                padding-bottom: 10px; /* For scrollbar */
+            }
+            .periodic-table-wrapper, .f-block-container { /* Ensure these don't shrink beyond content */
+                min-width: max-content;
+            }
+            .period-column {
+                 padding-top: 0; /* Adjust if needed */
+            }
+        }
+        @media (max-width: 480px) {
+            .element, .f-block-placeholder, .period-label {
+                width: 35px;
+                height: 35px;
+                font-size: 9px;
+            }
+            .periodic-table { grid-template-columns: repeat(18, 35px); }
+            .f-block-container { grid-template-columns: repeat(14, 35px); }
+            .mission { font-size: 18px; }
+            .controls button { padding: 8px 15px; font-size: 14px;}
+        }
+
+    </style>
+</head>
+<body>
+    <div class="mission">Missão: Clique nos elementos para construir a configuração eletrônica do <strong id="elementName"></strong></div>
+    <div class="progress" id="progress">Configuração atual: </div>
+    <div class="status" id="status"></div>
+    <div class="controls">
+        <button onclick="resetSelection()">🔄 Limpar Seleção</button>
+        <button onclick="loadNewGame()">➡️ Próximo Elemento</button>
+    </div>
+
+    <div class="table-environment">
+        <div class="period-column" id="mainTablePeriodColumn">
+            </div>
+        <div class="periodic-table-wrapper">
+            <div class="periodic-table" id="mainTable"></div>
+        </div>
+    </div>
+
+    <div class="f-block-overall-container">
+        <div class="period-column" id="fBlockPeriodColumn">
+            </div>
+        <div class="f-block-container" id="fBlockTable"></div>
+    </div>
+    
+    <div class="block-labels-container">
+        <div class="block-labels">
+            <span style="background-color:#f8c291; color: #6b4c38;">Bloco s</span>
+            <span style="background-color:#82ccdd; color: #2a525a;">Bloco p</span>
+            <span style="background-color:#b8e994; color: #415c33;">Bloco d</span>
+            <span style="background-color:#f6e58d; color: #696239;">Bloco f</span>
+        </div>
+    </div>
+
+    <script>
+        const mainTable = document.getElementById('mainTable');
+        const fBlockTable = document.getElementById('fBlockTable');
+        const mainTablePeriodColumn = document.getElementById('mainTablePeriodColumn');
+        const fBlockPeriodColumn = document.getElementById('fBlockPeriodColumn');
+        const progress = document.getElementById('progress');
+        const status = document.getElementById('status');
+        const elementName = document.getElementById('elementName');
+
+        const elementsData = [
+            // Period 1
+            { symbol: 'H', config: ['1s1'], block: 's', row: 1, col: 1 },
+            { symbol: 'He', config: ['1s2'], block: 's', row: 1, col: 18 }, 
+
+            // Period 2
+            { symbol: 'Li', config: ['1s2', '2s1'], block: 's', row: 2, col: 1 },
+            { symbol: 'Be', config: ['1s2', '2s2'], block: 's', row: 2, col: 2 },
+            { symbol: 'B', config: ['1s2', '2s2', '2p1'], block: 'p', row: 2, col: 13 },
+            { symbol: 'C', config: ['1s2', '2s2', '2p2'], block: 'p', row: 2, col: 14 },
+            { symbol: 'N', config: ['1s2', '2s2', '2p3'], block: 'p', row: 2, col: 15 },
+            { symbol: 'O', config: ['1s2', '2s2', '2p4'], block: 'p', row: 2, col: 16 },
+            { symbol: 'F', config: ['1s2', '2s2', '2p5'], block: 'p', row: 2, col: 17 },
+            { symbol: 'Ne', config: ['1s2', '2s2', '2p6'], block: 'p', row: 2, col: 18 },
+
+            // Period 3
+            { symbol: 'Na', config: ['1s2', '2s2', '2p6', '3s1'], block: 's', row: 3, col: 1 },
+            { symbol: 'Mg', config: ['1s2', '2s2', '2p6', '3s2'], block: 's', row: 3, col: 2 },
+            { symbol: 'Al', config: ['1s2', '2s2', '2p6', '3s2', '3p1'], block: 'p', row: 3, col: 13 },
+            { symbol: 'Si', config: ['1s2', '2s2', '2p6', '3s2', '3p2'], block: 'p', row: 3, col: 14 },
+            { symbol: 'P', config: ['1s2', '2s2', '2p6', '3s2', '3p3'], block: 'p', row: 3, col: 15 },
+            { symbol: 'S', config: ['1s2', '2s2', '2p6', '3s2', '3p4'], block: 'p', row: 3, col: 16 },
+            { symbol: 'Cl', config: ['1s2', '2s2', '2p6', '3s2', '3p5'], block: 'p', row: 3, col: 17 },
+            { symbol: 'Ar', config: ['1s2', '2s2', '2p6', '3s2', '3p6'], block: 'p', row: 3, col: 18 },
+
+            // Period 4
+            { symbol: 'K', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '4s1'], block: 's', row: 4, col: 1 },
+            { symbol: 'Ca', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '4s2'], block: 's', row: 4, col: 2 },
+            { symbol: 'Sc', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '4s2', '3d1'], block: 'd', row: 4, col: 3 },
+            { symbol: 'Ti', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '4s2', '3d2'], block: 'd', row: 4, col: 4 },
+            { symbol: 'V', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '4s2', '3d3'], block: 'd', row: 4, col: 5 },
+            { symbol: 'Cr', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d5', '4s1'], block: 'd', row: 4, col: 6 }, 
+            { symbol: 'Mn', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '4s2', '3d5'], block: 'd', row: 4, col: 7 },
+            { symbol: 'Fe', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '4s2', '3d6'], block: 'd', row: 4, col: 8 },
+            { symbol: 'Co', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '4s2', '3d7'], block: 'd', row: 4, col: 9 },
+            { symbol: 'Ni', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '4s2', '3d8'], block: 'd', row: 4, col: 10 },
+            { symbol: 'Cu', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s1'], block: 'd', row: 4, col: 11 }, 
+            { symbol: 'Zn', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '4s2', '3d10'], block: 'd', row: 4, col: 12 },
+            { symbol: 'Ga', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '4s2', '3d10', '4p1'], block: 'p', row: 4, col: 13 },
+            { symbol: 'Ge', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '4s2', '3d10', '4p2'], block: 'p', row: 4, col: 14 },
+            { symbol: 'As', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '4s2', '3d10', '4p3'], block: 'p', row: 4, col: 15 },
+            { symbol: 'Se', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '4s2', '3d10', '4p4'], block: 'p', row: 4, col: 16 },
+            { symbol: 'Br', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '4s2', '3d10', '4p5'], block: 'p', row: 4, col: 17 },
+            { symbol: 'Kr', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '4s2', '3d10', '4p6'], block: 'p', row: 4, col: 18 },
+
+            // Period 5
+            { symbol: 'Rb', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '5s1'], block: 's', row: 5, col: 1 },
+            { symbol: 'Sr', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '5s2'], block: 's', row: 5, col: 2 },
+            { symbol: 'Y', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '5s2', '4d1'], block: 'd', row: 5, col: 3 },
+            { symbol: 'Zr', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '5s2', '4d2'], block: 'd', row: 5, col: 4 },
+            { symbol: 'Nb', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d4', '5s1'], block: 'd', row: 5, col: 5 }, 
+            { symbol: 'Mo', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d5', '5s1'], block: 'd', row: 5, col: 6 }, 
+            { symbol: 'Tc', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d5', '5s2'], block: 'd', row: 5, col: 7 },
+            { symbol: 'Ru', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d7', '5s1'], block: 'd', row: 5, col: 8 }, 
+            { symbol: 'Rh', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d8', '5s1'], block: 'd', row: 5, col: 9 }, 
+            { symbol: 'Pd', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10'], block: 'd', row: 5, col: 10 }, 
+            { symbol: 'Ag', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s1'], block: 'd', row: 5, col: 11 }, 
+            { symbol: 'Cd', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2'], block: 'd', row: 5, col: 12 },
+            { symbol: 'In', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2', '5p1'], block: 'p', row: 5, col: 13 },
+            { symbol: 'Sn', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2', '5p2'], block: 'p', row: 5, col: 14 },
+            { symbol: 'Sb', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2', '5p3'], block: 'p', row: 5, col: 15 },
+            { symbol: 'Te', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2', '5p4'], block: 'p', row: 5, col: 16 },
+            { symbol: 'I', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2', '5p5'], block: 'p', row: 5, col: 17 },
+            { symbol: 'Xe', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2', '5p6'], block: 'p', row: 5, col: 18 },
+
+            // Period 6
+            { symbol: 'Cs', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2', '5p6', '6s1'], block: 's', row: 6, col: 1 },
+            { symbol: 'Ba', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2', '5p6', '6s2'], block: 's', row: 6, col: 2 },
+            { symbol: 'Lu', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2', '5p6', '4f14', '5d1', '6s2'], block: 'd', row: 6, col: 3 }, 
+            { symbol: 'Hf', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d2', '6s2'], block: 'd', row: 6, col: 4 },
+            { symbol: 'Ta', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d3', '6s2'], block: 'd', row: 6, col: 5 },
+            { symbol: 'W', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d4', '6s2'], block: 'd', row: 6, col: 6 },
+            { symbol: 'Re', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d5', '6s2'], block: 'd', row: 6, col: 7 },
+            { symbol: 'Os', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d6', '6s2'], block: 'd', row: 6, col: 8 },
+            { symbol: 'Ir', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d7', '6s2'], block: 'd', row: 6, col: 9 },
+            { symbol: 'Pt', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d9', '6s1'], block: 'd', row: 6, col: 10 }, 
+            { symbol: 'Au', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '6s1'], block: 'd', row: 6, col: 11 }, 
+            { symbol: 'Hg', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '6s2'], block: 'd', row: 6, col: 12 }, 
+            { symbol: 'Tl', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '6s2', '6p1'], block: 'p', row: 6, col: 13 }, 
+            { symbol: 'Pb', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '6s2', '6p2'], block: 'p', row: 6, col: 14 }, 
+            { symbol: 'Bi', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '6s2', '6p3'], block: 'p', row: 6, col: 15 }, 
+            { symbol: 'Po', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '6s2', '6p4'], block: 'p', row: 6, col: 16 }, 
+            { symbol: 'At', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '6s2', '6p5'], block: 'p', row: 6, col: 17 }, 
+            { symbol: 'Rn', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '6s2', '6p6'], block: 'p', row: 6, col: 18 },
+
+            // Period 7
+            { symbol: 'Fr', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '6s2', '6p6', '7s1'], block: 's', row: 7, col: 1 },
+            { symbol: 'Ra', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '6s2', '6p6', '7s2'], block: 's', row: 7, col: 2 },
+            { symbol: 'Lr', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f14', '6d1', '7s2'], block: 'd', row: 7, col: 3 }, 
+            { symbol: 'Rf', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f14', '6d2', '7s2'], block: 'd', row: 7, col: 4 },
+            { symbol: 'Db', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f14', '6d3', '7s2'], block: 'd', row: 7, col: 5 },
+            { symbol: 'Sg', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f14', '6d4', '7s2'], block: 'd', row: 7, col: 6 },
+            { symbol: 'Bh', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f14', '6d5', '7s2'], block: 'd', row: 7, col: 7 },
+            { symbol: 'Hs', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f14', '6d6', '7s2'], block: 'd', row: 7, col: 8 },
+            { symbol: 'Mt', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f14', '6d7', '7s2'], block: 'd', row: 7, col: 9 }, 
+            { symbol: 'Ds', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f14', '6d8', '7s2'], block: 'd', row: 7, col: 10 }, 
+            { symbol: 'Rg', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f14', '6d9', '7s2'], block: 'd', row: 7, col: 11 }, 
+            { symbol: 'Cn', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f14', '6d10', '7s2'], block: 'd', row: 7, col: 12 }, 
+            { symbol: 'Nh', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f14', '6d10', '7s2', '7p1'], block: 'p', row: 7, col: 13 }, 
+            { symbol: 'Fl', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f14', '6d10', '7s2', '7p2'], block: 'p', row: 7, col: 14 }, 
+            { symbol: 'Mc', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f14', '6d10', '7s2', '7p3'], block: 'p', row: 7, col: 15 }, 
+            { symbol: 'Lv', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f14', '6d10', '7s2', '7p4'], block: 'p', row: 7, col: 16 }, 
+            { symbol: 'Ts', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f14', '6d10', '7s2', '7p5'], block: 'p', row: 7, col: 17 }, 
+            { symbol: 'Og', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f14', '6d10', '7s2', '7p6'], block: 'p', row: 7, col: 18 },
+
+            // f-block elements
+            { symbol: 'La', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2', '5p6', '5d1', '6s2'], block: 'd', f_block_pos: 1 }, 
+            { symbol: 'Ce', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2', '5p6', '4f1', '5d1', '6s2'], block: 'f', f_block_pos: 2 },
+            { symbol: 'Pr', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2', '5p6', '4f3', '6s2'], block: 'f', f_block_pos: 3 },
+            { symbol: 'Nd', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2', '5p6', '4f4', '6s2'], block: 'f', f_block_pos: 4 },
+            { symbol: 'Pm', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2', '5p6', '4f5', '6s2'], block: 'f', f_block_pos: 5 },
+            { symbol: 'Sm', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2', '5p6', '4f6', '6s2'], block: 'f', f_block_pos: 6 },
+            { symbol: 'Eu', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2', '5p6', '4f7', '6s2'], block: 'f', f_block_pos: 7 },
+            { symbol: 'Gd', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2', '5p6', '4f7', '5d1', '6s2'], block: 'f', f_block_pos: 8 }, 
+            { symbol: 'Tb', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2', '5p6', '4f9', '6s2'], block: 'f', f_block_pos: 9 },
+            { symbol: 'Dy', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2', '5p6', '4f10', '6s2'], block: 'f', f_block_pos: 10 },
+            { symbol: 'Ho', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2', '5p6', '4f11', '6s2'], block: 'f', f_block_pos: 11 },
+            { symbol: 'Er', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2', '5p6', '4f12', '6s2'], block: 'f', f_block_pos: 12 },
+            { symbol: 'Tm', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2', '5p6', '4f13', '6s2'], block: 'f', f_block_pos: 13 },
+            { symbol: 'Yb', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '5s2', '5p6', '4f14', '6s2'], block: 'f', f_block_pos: 14 },
+            
+            { symbol: 'Ac', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '6s2', '6p6', '6d1', '7s2'], block: 'd', f_block_pos: 15 }, 
+            { symbol: 'Th', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '6s2', '6p6', '6d2', '7s2'], block: 'd', f_block_pos: 16 }, 
+            { symbol: 'Pa', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f2', '6s2', '6p6', '6d1', '7s2'], block: 'f', f_block_pos: 17 }, 
+            { symbol: 'U', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f3', '6s2', '6p6', '6d1', '7s2'], block: 'f', f_block_pos: 18 }, 
+            { symbol: 'Np', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f4', '6s2', '6p6', '6d1', '7s2'], block: 'f', f_block_pos: 19 }, 
+            { symbol: 'Pu', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f6', '7s2'], block: 'f', f_block_pos: 20 }, 
+            { symbol: 'Am', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f7', '7s2'], block: 'f', f_block_pos: 21 },
+            { symbol: 'Cm', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f7', '6d1', '7s2'], block: 'f', f_block_pos: 22 }, 
+            { symbol: 'Bk', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f9', '7s2'], block: 'f', f_block_pos: 23 },
+            { symbol: 'Cf', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f10', '7s2'], block: 'f', f_block_pos: 24 },
+            { symbol: 'Es', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f11', '7s2'], block: 'f', f_block_pos: 25 },
+            { symbol: 'Fm', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f12', '7s2'], block: 'f', f_block_pos: 26 },
+            { symbol: 'Md', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f13', '7s2'], block: 'f', f_block_pos: 27 },
+            { symbol: 'No', config: ['1s2', '2s2', '2p6', '3s2', '3p6', '3d10', '4s2', '4p6', '4d10', '4f14', '5s2', '5p6', '5d10', '5f14', '7s2'], block: 'f', f_block_pos: 28 }
+        ];
+
+        let selectedSubshells = []; 
+        let correctConfig = []; 
+        let currentElementSymbol = '';
+        let targetElement = null; 
+
+        function parseSubshell(sub) {
+            const match = sub.match(/(\d+)([spdf])(\d*)/);
+            if (!match) return null;
+            return {
+                n: parseInt(match[1]), 
+                l: {'s': 0, 'p': 1, 'd': 2, 'f': 3}[match[2]], 
+                electrons: parseInt(match[3] || 0) 
+            };
+        }
+
+        function sortSubshells(subshells) {
+            return [...subshells].sort((a, b) => {
+                const parsedA = parseSubshell(a);
+                const parsedB = parseSubshell(b);
+                if (!parsedA || !parsedB) return 0; 
+                const sumA = parsedA.n + parsedA.l;
+                const sumB = parsedB.n + parsedB.l;
+                if (sumA !== sumB) return sumA - sumB;
+                return parsedA.n - parsedB.n; 
+            });
+        }
+
+        function loadRandomElement() {
+            // Remove previous highlight
+            const previouslyHighlighted = document.querySelector('.target-element-highlight');
+            if (previouslyHighlighted) {
+                previouslyHighlighted.classList.remove('target-element-highlight');
+            }
+
+            // Filter elements that are actually playable (have a configuration)
+            const playableElements = elementsData.filter(el => el.config && el.config.length > 0);
+            if (playableElements.length === 0) {
+                console.error("No playable elements found in elementsData.");
+                status.innerText = "Erro: Não há elementos para carregar.";
+                return;
+            }
+            targetElement = playableElements[Math.floor(Math.random() * playableElements.length)];
+            correctConfig = targetElement.config;
+            currentElementSymbol = targetElement.symbol;
+            elementName.textContent = currentElementSymbol;
+            
+            // Highlight the new target element
+            const allElementDivs = document.querySelectorAll('.element');
+            allElementDivs.forEach(div => {
+                if (div.dataset.symbol === targetElement.symbol) {
+                    div.classList.add('target-element-highlight');
+                }
+            });
+
+            resetSelection(); 
+            status.innerText = `Construa a configuração para ${currentElementSymbol}.`;
+        }
+
+        function createTable() {
+            mainTable.innerHTML = '';
+            fBlockTable.innerHTML = '';
+            mainTablePeriodColumn.innerHTML = '';
+            fBlockPeriodColumn.innerHTML = '';
+
+            // Create Period Labels for Main Table
+            for (let i = 1; i <= 7; i++) {
+                const periodDiv = document.createElement('div');
+                periodDiv.className = 'period-label';
+                periodDiv.textContent = i;
+                mainTablePeriodColumn.appendChild(periodDiv);
+            }
+             // Create Period Labels for F-Block Table
+            const fBlockPeriods = ['6', '7']; // Lanthanides (Period 6), Actinides (Period 7)
+            fBlockPeriods.forEach(p => {
+                const periodDiv = document.createElement('div');
+                periodDiv.className = 'period-label';
+                periodDiv.textContent = p;
+                fBlockPeriodColumn.appendChild(periodDiv);
+            });
+
+
+            const mainGrid = Array(7).fill(null).map(() => Array(18).fill(null));
+            // fBlockGrid will have 14 columns for elements like La-Yb and Ac-No
+            const fBlockGrid = Array(2).fill(null).map(() => Array(14).fill(null));
+
+
+            elementsData.forEach(el => {
+                if (el.row !== undefined && el.col !== undefined && 
+                    !['La', 'Ac'].includes(el.symbol) && /* La/Ac handled by f-block visual */
+                    (el.block !== 'f' || ['Lu', 'Lr'].includes(el.symbol)) /* Lu/Lr are d but sometimes shown with f */
+                   ) {
+                     // Standard elements for main grid, Lu and Lr are d-block but placed in main table.
+                    if(el.row -1 < mainGrid.length && el.col -1 < mainGrid[0].length){
+                        mainGrid[el.row - 1][el.col - 1] = el;
+                    }
+                } else if (el.block === 'f' || ['La', 'Ac', 'Th'].includes(el.symbol) ) { 
+                    // Lanthanide series (La - Yb)
+                    if (el.f_block_pos >= 1 && el.f_block_pos <= 14) { 
+                        if(el.f_block_pos - 1 < fBlockGrid[0].length){
+                           fBlockGrid[0][el.f_block_pos - 1] = el; 
+                        }
+                    }
+                    // Actinide series (Ac - No)
+                    else if (el.f_block_pos >= 15 && el.f_block_pos <= 28) { 
+                         if(el.f_block_pos - 15 < fBlockGrid[1].length){
+                            fBlockGrid[1][el.f_block_pos - 15] = el; 
+                         }
+                    }
+                }
+            });
+
+            // Populate Main Table
+            for (let r = 0; r < 7; r++) {
+                for (let c = 0; c < 18; c++) {
+                    const el = mainGrid[r][c];
+                    const div = document.createElement('div');
+                    if (el) {
+                        div.className = `element block-${el.block}`;
+                        div.textContent = el.symbol;
+                        div.dataset.symbol = el.symbol; 
+                        div.dataset.config = el.config.join(' ');
+                    } else if ((r === 5 && c === 2) || (r === 6 && c === 2)) { 
+                        div.className = 'f-block-placeholder';
+                        div.textContent = r === 5 ? 'La-Lu' : 'Ac-Lr';
+                    } else {
+                        div.className = 'blank';
+                    }
+                    mainTable.appendChild(div);
+                }
+            }
+
+            // Populate f-block Table (14 columns)
+            for (let r = 0; r < 2; r++) {
+                for (let c = 0; c < 14; c++) { // Iterate 14 columns
+                    const el = fBlockGrid[r][c];
+                    const div = document.createElement('div');
+                    if (el) {
+                        // Determine block for styling, default to 'f' if it's La, Ac, Th (d-block) but shown here
+                        let displayBlock = el.block;
+                        if (['La', 'Ac', 'Th'].includes(el.symbol) && el.block === 'd') {
+                            displayBlock = 'f'; // Visually treat them as f-block here
+                        }
+                        div.className = `element block-${displayBlock}`;
+                        div.textContent = el.symbol;
+                        div.dataset.symbol = el.symbol;
+                        div.dataset.config = el.config.join(' ');
+                    } else {
+                        div.className = 'blank'; // Use blank for empty f-block spots if any
+                    }
+                    fBlockTable.appendChild(div);
+                }
+            }
+            addAllEventListeners();
+        }
+        
+        function addAllEventListeners() {
+            document.querySelectorAll('.element').forEach(elDiv => {
+                if (elDiv.dataset.symbol) { 
+                    elDiv.removeEventListener('click', handleElementClick); 
+                    elDiv.addEventListener('click', handleElementClick);
+                }
+            });
+        }
+
+        function handleElementClick(event) {
+            const clickedDiv = event.currentTarget;
+            handleClick(clickedDiv);
+        }
+
+        function handleClick(elDiv) { 
+            const clickedElementSymbol = elDiv.dataset.symbol;
+            const clickedElementData = elementsData.find(e => e.symbol === clickedElementSymbol);
+
+            if (!clickedElementData || !targetElement) return; 
+
+            const nextExpectedSubshell = correctConfig[selectedSubshells.length];
+
+            if (nextExpectedSubshell && clickedElementData.config.includes(nextExpectedSubshell)) {
+                const lastSubshellOfClicked = clickedElementData.config[clickedElementData.config.length - 1];
+
+                if (lastSubshellOfClicked === nextExpectedSubshell) {
+                    if (elDiv.classList.contains('selected')) {
+                        status.innerText = 'Este elemento já contribuiu ou não é o próximo.';
+                        return;
+                    } else {
+                        elDiv.classList.add('selected');
+                        selectedSubshells.push(lastSubshellOfClicked);
+                        selectedSubshells = sortSubshells(selectedSubshells); 
+                        updateStatus();
+                    }
+                } else {
+                    status.innerText = `❌ ${clickedElementSymbol} não corresponde ao próximo subnível esperado: ${nextExpectedSubshell || 'config. completa'}.`;
+                }
+            } else if (!nextExpectedSubshell && selectedSubshells.length === correctConfig.length) { // Check if already complete
+                 status.innerText = '✅ Configuração já completa!';
+            } else {
+                status.innerText = `❌ ${clickedElementSymbol} não é o próximo. Esperado: ${nextExpectedSubshell || 'Configuração completa'}`;
+            }
+        }
+
+        function updateStatus() {
+            progress.innerText = 'Configuração atual: ' + selectedSubshells.join(' → ');
+
+            const flattenedCorrect = correctConfig;
+            const flattenedSelected = selectedSubshells;
+
+            let partialMatch = true;
+            for (let i = 0; i < flattenedSelected.length; i++) {
+                if (flattenedSelected[i] !== flattenedCorrect[i]) {
+                    partialMatch = false;
+                    break;
+                }
+            }
+
+            if (!partialMatch) {
+                status.innerText = '❌ Sequência incorreta. Limpe e tente novamente!';
+            } else if (flattenedSelected.length === flattenedCorrect.length) {
+                status.innerText = '✅ Parabéns! Configuração correta!';
+                document.querySelectorAll('.element').forEach(el => el.removeEventListener('click', handleElementClick));
+                setTimeout(() => {
+                    loadNewGame(); 
+                }, 3000); 
+            } else if (flattenedSelected.length < flattenedCorrect.length) {
+                status.innerText = `Continue! Próximo: ${flattenedCorrect[flattenedSelected.length]}`;
+            }
+        }
+
+        function resetSelection() {
+            selectedSubshells = [];
+            document.querySelectorAll('.element').forEach(elDiv => {
+                elDiv.classList.remove('selected');
+            });
+            addAllEventListeners();
+            progress.innerText = 'Configuração atual: ';
+            if (targetElement) { 
+                 status.innerText = `Construa a configuração para ${targetElement.symbol}.`;
+            } else {
+                status.innerText = 'Carregando novo elemento...';
+            }
+        }
+
+        function loadNewGame() {
+            loadRandomElement(); 
+        }
+
+        // Initialize the game
+        createTable();
+        loadRandomElement(); 
+    </script>
+</body>
+</html>

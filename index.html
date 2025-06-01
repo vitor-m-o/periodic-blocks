@@ -459,6 +459,7 @@
             }
             targetElement = playableElements[Math.floor(Math.random() * playableElements.length)];
             correctConfig = targetElement.config;
+            correctConfig = sortSubshells(correctConfig);
             currentElementSymbol = targetElement.symbol;
             elementName.textContent = currentElementSymbol;
             
@@ -594,7 +595,9 @@
             const nextExpectedSubshell = correctConfig[selectedSubshells.length];
 
             if (nextExpectedSubshell && clickedElementData.config.includes(nextExpectedSubshell)) {
-                const lastSubshellOfClicked = clickedElementData.config[clickedElementData.config.length - 1];
+              const orderedClickedConfig = sortSubshells(clickedElementData.config);
+              const lastSubshellOfClicked = orderedClickedConfig[orderedClickedConfig.length - 1];
+
 
                 if (lastSubshellOfClicked === nextExpectedSubshell) {
                     if (elDiv.classList.contains('selected')) {
